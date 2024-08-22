@@ -1,11 +1,36 @@
 # chatgpt-3k
 目标: 3000行代码以内创建微型的chatgpt应用 create a mini-ChatGPT within 3000 lines of code
+(仅为学习目编写，没有做任何优化，请勿在真实训练中使用 as Tutorial）
 
 ## 说明
 部分代码借助了ChatGPT完成 (同时也给出一些误导和错误代码）**Should Never Trust GPT too much**
 
+## 目标
+- [x] Transformer
+- [x] GPT模型GPT model
+- [x] 训练代码simple training code for GPT
+- [ ] 奖励模型Reward-Model
+- [ ] 偏好训练
+- [ ] 微调代码Fine-tuning
+
+## ChatGPT复现步骤
+### 预训练Pre-training
+成本函数Loss Function:
+$$
+L_lm = \sigma P(y|x_1, x_2, ..., x_n)
+$$
+
+### 微调Fine-tuning
+成本函数Loss Function:
+$$
+L_{fine-tuning} = \alpha * L_lm  + L_task
+$$
+
 ## 参考资料Referrence
 - [gp-2 official](https://github.com/nshepperd/gpt-2/blob/finetuning/train.py)
+- [Generative Pretrained Transformers介绍](https://github.com/iVishalr/GPT)
+- [nano-GPT](TODO)
+- [GPT-lite](https://brunomaga.github.io/GPT-lite)
 - [GPT in 60 Lines of NumPy](https://jaykmody.com/blog/gpt-from-scratch/)
 - [60行NumPy手搓GPT[翻译]](https://jiqihumanr.github.io/2023/04/13/gpt-from-scratch/)
 - [The Illustrated Transformer](https://jalammar.github.io/illustrated-transformer/)

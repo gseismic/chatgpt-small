@@ -1,15 +1,17 @@
 from ..config import torch, F
 
 
-def generate_sequence(model, start_token, max_len, vocab_size, device,
-                      temperature=1.0, top_k=None, top_p=None):
+def generate_sequence(model, start_tokens, max_gen_len, vocab_size, 
+                      max_seq_len,
+                      device,
+                      temperature=1.0, top_k=None, top_p=None, callback=None):
     """
     生成文本序列。
 
     Parameters:
     - model: GPT模型
-    - start_token: 起始token的索引
-    - max_len: 生成序列的最大长度
+    - start_tokens: 起始token的索引
+    - max_gen_len: 生成序列的最大长度
     - vocab_size: 词汇表大小
     - device: 设备（如 'cuda' 或 'cpu'）
     - temperature: 温度调整参数 (默认为1.0)
@@ -27,36 +29,47 @@ def generate_sequence(model, start_token, max_len, vocab_size, device,
         ff_dim = 2048
         vocab_size = 10000
         dropout = 0.1
-        max_len = 20
-        start_token = 0  # 起始token索引
+        max_gen_len = 20
+        start_tokens = 0  # 起始token索引
 
         # 假设您已经定义并加载了 GPT 模型
         gpt = GPT(num_layers, embed_dim, num_heads, ff_dim, vocab_size, dropout)
 
         # 温度调整生成
-        generated_sequence = generate_sequence(gpt, start_token, max_len, vocab_size, device='cpu', temperature=0.7)
+        generated_sequence = generate_sequence(gpt, start_tokens, max_gen_len, vocab_size, device='cpu', temperature=0.7)
         print("Generated sequence with temperature:", generated_sequence)
 
         # Top-k 采样生成
-        generated_sequence = generate_sequence(gpt, start_token, max_len, vocab_size, device='cpu', top_k=50)
+        generated_sequence = generate_sequence(gpt, start_tokens, max_gen_len, vocab_size, device='cpu', top_k=50)
         print("Generated sequence with top-k sampling:", generated_sequence)
 
         # Top-p 采样生成
-        generated_sequence = generate_sequence(gpt, start_token, max_len, vocab_size, device='cpu', top_p=0.9)
+        generated_sequence = generate_sequence(gpt, start_tokens, max_gen_len, vocab_size, device='cpu', top_p=0.9)
         print("Generated sequence with top-p sampling:", generated_sequence)
     """
+    assert device in ['cpu', 'cuda']
     assert not (top_k is True and top_p is True)
     assert top_p is None or 0 < top_p < 1
-    assert top_k is None or 0 < top_k <= max_len
+    assert top_k is None or 0 < top_k <= max_gen_len
+    # assert isinstance(start_tokens, list)
     model.eval()
-    generated = [start_token]
-    input_seq = torch.tensor([start_token], device=device).unsqueeze(0)  # [1, 1]
+    if isinstance(start_tokens, (list,tuple)):
+        start_tokens = list(start_tokens)
+    else:
+        start_tokens = [start_tokens]
+    
+    generated = start_tokens[:]
+    # print(f'{start_tokens=}')
+    input_seq = torch.tensor(generated[-max_seq_len:], device=device).unsqueeze(0)  # [1, 1]
+    # print(f'{input_seq=}')
 
     with torch.no_grad():
-        for _ in range(max_len - 1):
+        for i in range(max_gen_len - 1):
+            # print(f'{input_seq=}')
+            input_seq = torch.tensor(generated[-max_seq_len:], device=device).unsqueeze(0)  # [1, 1]
+            # print(f'{i=}: {input_seq=}')
             output = model(input_seq)  # [1, seq_len, vocab_size]
             logits = output[0, -1, :]  # [vocab_size]
-
             
             # 应用温度调整
             if temperature != 1.0:
@@ -108,6 +121,8 @@ def generate_sequence(model, start_token, max_len, vocab_size, device,
                 next_token = torch.multinomial(probs, 1)
 
             generated.append(next_token.item())
+            if callback is not None:
+                callback(next_token.item())
             input_seq = torch.cat([input_seq, torch.tensor([[next_token]], device=device)], dim=1)
 
     return generated

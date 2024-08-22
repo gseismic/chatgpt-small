@@ -76,6 +76,7 @@ class GPT(nn.Module):
         # print(f'GPT: {x.shape=}')
         batch_size = x.size(0)
         cur_seq_len = x.size(1)
+        assert 1 <= cur_seq_len <= self.seq_len
         # Apply causal mask (N, 1, seq_len, seq_len)
         # 因为要用到batch_size
         mask = torch.tril(torch.ones((cur_seq_len, cur_seq_len))).expand(
@@ -94,3 +95,14 @@ class GPT(nn.Module):
         x = self.layer_norm(x)
         output = self.fc_out(x)
         return output
+
+    def generate(self, start_tokens, max_len, device='cuda', temperature=1.0,
+                 top_k=None, top_p=None, callback=None):
+        from .gpt import generate_sequence
+        samples = generate_sequence(self, start_tokens, max_len, self.vocab_size, 
+                                    max_seq_len=self.seq_len,
+                                    device=device,
+                                    temperature=temperature, 
+                                    top_k=top_k, top_p=top_p,
+                                    callback=callback)
+        return samples
