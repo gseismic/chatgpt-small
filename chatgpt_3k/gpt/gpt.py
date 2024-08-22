@@ -38,15 +38,36 @@ class GPTBlock(nn.Module):
 
 class GPT(nn.Module):
 
-    def __init__(self, num_layers, embed_dim, num_heads, ff_dim, vocab_size, max_len=512, dropout=0.1):
+    def __init__(self, num_layers, embed_dim, num_heads, ff_dim, vocab_size, seq_len, dropout=0.1):
         super(GPT, self).__init__()
+        self.num_layers = num_layers
+        self.embed_dim = embed_dim
+        self.ff_dim = ff_dim
+        self.vocab_size = vocab_size
+        self.seq_len = seq_len
+        self.dropout = dropout
         self.embedding = nn.Embedding(vocab_size, embed_dim)
-        self.positional_encoding = PositionalEncoding(embed_dim, max_len)
+        self.positional_encoding = PositionalEncoding(embed_dim, seq_len)
         self.blocks = nn.ModuleList([
             GPTBlock(embed_dim, num_heads, ff_dim, dropout) for _ in range(num_layers)
         ])
         self.layer_norm = nn.LayerNorm(embed_dim)
         self.fc_out = nn.Linear(embed_dim, vocab_size)
+
+    @classmethod
+    def from_config(cls, gpt_config):
+        if isinstance(gpt_config, str):
+            if gpt_config.endswith('.json'):
+                import json
+                with open(gpt_config) as f:
+                    config = json.load(f)
+            else:
+                raise ValueError(f'Invalid Config File: `{gpt_config}`')
+        elif isinstance(gpt_config, dict):
+            config = gpt_config
+        else:
+            raise ValueError(f'Invalid Config: `{gpt_config}`')
+        return GPT(**config)
         
     def forward(self, x, mask=None):
         x = self.embedding(x) + self.positional_encoding(x)

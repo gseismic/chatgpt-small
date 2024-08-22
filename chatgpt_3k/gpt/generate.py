@@ -47,6 +47,7 @@ def generate_sequence(model, start_token, max_len, vocab_size, device,
     """
     assert not (top_k is True and top_p is True)
     assert top_p is None or 0 < top_p < 1
+    assert top_k is None or 0 < top_k <= max_len
     model.eval()
     generated = [start_token]
     input_seq = torch.tensor([start_token], device=device).unsqueeze(0)  # [1, 1]
@@ -55,19 +56,28 @@ def generate_sequence(model, start_token, max_len, vocab_size, device,
         for _ in range(max_len - 1):
             output = model(input_seq)  # [1, seq_len, vocab_size]
             logits = output[0, -1, :]  # [vocab_size]
+
             
             # 应用温度调整
             if temperature != 1.0:
                 logits /= temperature
 
             probs = F.softmax(logits, dim=-1)
+            #print(f'{probs=}')
+            #print(f'{sorted(probs, reverse=True)=}')
+            #print(f'{torch.sum(probs)=}')
+            #print(f'{vocab_size=}')
             
             if top_k is not None:
                 # Top-k采样
                 # logits: [vocab_size]
                 # top_k_values: [50]
+                # print(f'{logits=}, {logits.shape=}')
+                # print(f'{top_k=}')
                 top_k_values, top_k_indices = logits.topk(top_k)
+                # print(f'{top_k_values=}')
                 top_k_probs = F.softmax(top_k_values, dim=-1)
+                # print(f'{top_k_probs=}')
                 # 采样1个
                 next_token = top_k_indices[torch.multinomial(top_k_probs, 1).item()]
             elif top_p is not None:
@@ -78,7 +88,7 @@ def generate_sequence(model, start_token, max_len, vocab_size, device,
                 # https://docs.cohere.com/docs/controlling-generation-with-top-k-top-p#2-pick-from-amongst-the-top-tokens-top-k
                 sorted_probs, sorted_indices = torch.sort(probs, descending=True)
                 cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
-                # print(f'{cumulative_probs=}')
+                # print(f'{cumulative_probs=}, {top_p=}')
                 sorted_indices_to_keep = cumulative_probs <= top_p
                 # print(f'{sorted_indices_to_keep=}, {sorted_indices_to_keep.shape=}')
                 top_p_indices = sorted_indices[sorted_indices_to_keep]
@@ -87,13 +97,17 @@ def generate_sequence(model, start_token, max_len, vocab_size, device,
                 # 如果为空，会导致RuntimeError
                 if len(top_p_probs) > 0:
                     next_token = top_p_indices[torch.multinomial(top_p_probs, 1).item()]
+                    # print(f'{next_token=}')
                 else:
+                    # top_p_probs: [0.7916, 0.9079, 0.9552..], top_p = 0.6
+                    # 代表第一个的概率超过0.6了
+                    # print(f'**Warning: size(top_p_probs) == 0, select the first token')
                     next_token = sorted_indices[0]
             else:
                 # 基于温度调整的采样
-                next_token = torch.multinomial(probs, 1).item()
+                next_token = torch.multinomial(probs, 1)
 
-            generated.append(next_token)
+            generated.append(next_token.item())
             input_seq = torch.cat([input_seq, torch.tensor([[next_token]], device=device)], dim=1)
 
     return generated
