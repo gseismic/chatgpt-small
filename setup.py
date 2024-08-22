@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='chatgpt_3k', 
-    version='0.0.1', 
+    version='0.0.2', 
     packages=find_packages(),
     description='a mini-ChatGPT within 3000 lines of code',
     install_requires = ['torch', 'numpy', 'loguru'],

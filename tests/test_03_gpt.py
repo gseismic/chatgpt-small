@@ -13,12 +13,14 @@ def test_gpt_basic():
     num_layers = 12
     ff_dim = 2048
     vocab_size = 10000
-    batch_size = 32
+    batch_size = 5
     dropout = 0.1
+    seq_len = 3
 
-    gpt = GPT(num_layers, embed_dim, num_heads, ff_dim, vocab_size, dropout=dropout)
+    gpt = GPT(num_layers, embed_dim, num_heads, ff_dim, vocab_size,
+              seq_len=seq_len, dropout=dropout)
 
-    src = torch.randint(0, vocab_size, (batch_size, 20))  # [batch_size, seq_len]
+    src = torch.randint(0, vocab_size, (batch_size, seq_len))  # [batch_size, seq_len]
     output = gpt(src)
     print(f"Output shape: {output.shape}")  # 输出: [32, 20, vocab_size]
 
@@ -34,14 +36,15 @@ def test_gpt_generate():
     start_token = 0  # 起始token索引
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    gpt = GPT(num_layers, embed_dim, num_heads, ff_dim, vocab_size, dropout=dropout).to(device)
+    gpt = GPT(num_layers, embed_dim, num_heads, ff_dim, vocab_size,
+              seq_len=max_len, dropout=dropout).to(device)
 
     # 温度调整生成
     generated_sequence = generate_sequence(gpt, start_token, max_len, vocab_size, device='cpu', temperature=0.7)
     print("Generated sequence with **temperature**:", generated_sequence)
 
     # Top-k 采样生成
-    generated_sequence = generate_sequence(gpt, start_token, max_len, vocab_size, device='cpu', top_k=50)
+    generated_sequence = generate_sequence(gpt, start_token, max_len, vocab_size, device='cpu', top_k=5)
     print("Generated sequence with **top-k** sampling:", generated_sequence)
 
     # Top-p 采样生成
@@ -61,7 +64,8 @@ def test_gpt_train_simple():
     start_token = 0  # 起始token索引
 
     # 实例化模型
-    gpt = GPT(num_layers, embed_dim, num_heads, ff_dim, vocab_size, dropout=dropout)
+    gpt = GPT(num_layers, embed_dim, num_heads, ff_dim, vocab_size,
+              seq_len=max_len, dropout=dropout)
 
     # 损失函数和优化器
     criterion = nn.CrossEntropyLoss()

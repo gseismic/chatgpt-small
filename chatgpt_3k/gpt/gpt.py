@@ -1,4 +1,4 @@
-from ..config import nn
+from ..config import nn, torch
 from ..transformer.positional_encoding import PositionalEncoding
 from ..transformer.positionwise_feed_forward import PositionwiseFeedForward
 from ..transformer.multi_head_attention import MultiHeadAttention
@@ -29,6 +29,7 @@ class GPTBlock(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, mask=None):
+        # print(f'====={x.shape=}')
         self_attn_output, _ = self.self_attention(x, x, x, mask)
         x = self.layer_norm1(x + self.dropout(self_attn_output))
         ffn_output = self.ffn(x)
@@ -69,7 +70,24 @@ class GPT(nn.Module):
             raise ValueError(f'Invalid Config: `{gpt_config}`')
         return GPT(**config)
         
-    def forward(self, x, mask=None):
+    def forward(self, x):
+        # src: [batch_size, seq_len]
+        # NOTE: 当前的x输入可能比self.seq_len小，并且是允许的
+        # print(f'GPT: {x.shape=}')
+        batch_size = x.size(0)
+        cur_seq_len = x.size(1)
+        # Apply causal mask (N, 1, seq_len, seq_len)
+        # 因为要用到batch_size
+        mask = torch.tril(torch.ones((cur_seq_len, cur_seq_len))).expand(
+            batch_size, 1, cur_seq_len, cur_seq_len
+        )
+        # print(f'{mask, mask.shape=}')
+        # mask = None
+
+        # energy = energy.masked_fill(causal_mask == 0, float('-inf'))
+        # print(f'{x.shape=}')
+        # print(f'{self.embedding(x).shape=}')
+        # print(f'{self.positional_encoding(x).shape=}')
         x = self.embedding(x) + self.positional_encoding(x)
         for block in self.blocks:
             x = block(x, mask)

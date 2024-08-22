@@ -13,7 +13,7 @@ def test_transformer_pe():
     n_seq = 100
     d_model = 10
     X = torch.zeros(batch_size, n_seq, d_model)
-    pe = PositionalEncoding(n_seq, d_model, base=10000)
+    pe = PositionalEncoding(n_seq, d_model, pe_base=10000)
     X_pe = pe(X)
     print(X_pe, X_pe.shape)
     # plt.plot(X_pe)

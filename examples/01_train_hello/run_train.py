@@ -3,27 +3,20 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from chatgpt_3k.gpt import GPT, generate_sequence
-
-torch.manual_seed(0)
-
-# 本地文件
 from dataset import MemDataset
 from tokenizer import IndexTokenizer
 
-# 示例数据集
-#data = [
-#    "hello world this is a test",
-#    "this is a simple gpt model",
-#    "machine learning is awesome",
-#    "transformers are powerful",
-#]
+torch.manual_seed(0)
 
+# 示例数据集
 data = [
     "hello world this is a test",
+    "this is a simple gpt model",
+    "machine learning is awesome",
+    "transformers are powerful",
 ]
 
-batch_size = 1
-
+batch_size = 2
 tokenizer = IndexTokenizer()
 dataset = MemDataset(data, tokenizer)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
@@ -55,6 +48,7 @@ optimizer = optim.Adam(gpt.parameters(), lr=0.001)
 
 num_epoch = 300*3
 num_epoch = 300
+num_epoch = 30
 
 # 训练步骤
 gpt.train()
@@ -90,58 +84,20 @@ for epoch in range(num_epoch):
         print(f'Epoch {epoch+1}, Loss: {epoch_loss/len(dataloader):.4f}')
 
 # 推断
+start_token = tokenizer.encode("hello")[0]
+max_generate_len = 20
 
-if 1:
-    start_token = tokenizer.encode("hello")[0]
-    start_token = tokenizer.encode("t")[0]
-    max_generate_len = 20
+# 温度调整生成
+generated_sequence = generate_sequence(gpt, start_token, max_generate_len, vocab_size, device='cpu', temperature=0.7)
+decoded_sequence = tokenizer.decode(generated_sequence)
+print("Generated sequence with **temperature**:", decoded_sequence)
 
-    if 1:
-        # 温度调整生成
-        generated_sequence = generate_sequence(gpt, start_token, max_generate_len, vocab_size, device='cpu', temperature=0.7)
-        decoded_sequence = tokenizer.decode(generated_sequence)
-        print("Generated sequence with **temperature**:", decoded_sequence)
+# Top-k 采样生成
+generated_sequence = generate_sequence(gpt, start_token, max_generate_len, vocab_size, device='cpu', top_k=3)
+decoded_sequence = tokenizer.decode(generated_sequence)
+print("Generated sequence with **top-k** sampling:", decoded_sequence)
 
-    if 1:
-        # Top-k 采样生成
-        generated_sequence = generate_sequence(gpt, start_token, max_generate_len, vocab_size, device='cpu', top_k=1)
-        print(f'{repr(generated_sequence)=}')
-        decoded_sequence = tokenizer.decode(generated_sequence)
-        print("Generated sequence with **top-k** sampling:", decoded_sequence)
-
-    if 1:
-        # Top-p 采样生成
-        generated_sequence = generate_sequence(gpt, start_token, max_generate_len, vocab_size, device='cpu', top_p=0.9)
-        decoded_sequence = tokenizer.decode(generated_sequence)
-        print("Generated sequence with **top-p** sampling:", decoded_sequence)
-if 0:
-    def generate_sequence2(model, start_token, max_len, vocab_size, temperature=1.0, top_k=0, top_p=0.9, device='cpu'):
-        model.eval()
-        generated = [start_token]
-        for _ in range(max_len):
-            input_seq = torch.tensor(generated[-max_len:], dtype=torch.long).unsqueeze(0).to(device)
-            logits = model(input_seq)
-            logits = logits[:, -1, :] / temperature
-
-            if top_k > 0:
-                top_k_probs, top_k_indices = torch.topk(logits, top_k)
-                probs = torch.softmax(top_k_probs, dim=-1)
-                next_token = top_k_indices[0, torch.multinomial(probs, 1).item()]
-            else:
-                probs = torch.softmax(logits, dim=-1).squeeze(0)
-                sorted_probs, sorted_indices = torch.sort(probs, descending=True)
-                cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
-                sorted_indices_to_keep = cumulative_probs <= top_p
-                sorted_indices_to_keep[sorted_indices_to_keep.sum()] = True  # Ensure at least one token is selected
-                sorted_indices = sorted_indices[sorted_indices_to_keep]
-                next_token = sorted_indices[torch.multinomial(sorted_probs[sorted_indices_to_keep], 1).item()]
-
-            generated.append(next_token.item())
-
-        return generated
-
-    start_token = tokenizer.encode("hello")[0]
-    generated_sequence = generate_sequence2(gpt, start_token, max_len=20, vocab_size=vocab_size, device=device)
-    decoded_sequence = tokenizer.decode(generated_sequence)
-    print(f"Generated sequence: {decoded_sequence}")
-
+# Top-p 采样生成
+generated_sequence = generate_sequence(gpt, start_token, max_generate_len, vocab_size, device='cpu', top_p=0.9)
+decoded_sequence = tokenizer.decode(generated_sequence)
+print("Generated sequence with **top-p** sampling:", decoded_sequence)

@@ -2,6 +2,10 @@ from ..config import torch, nn, F
 
 
 class MultiHeadAttention(nn.Module):
+    '''
+    Note:
+        seq_len是动态确定的，允许跟max_seq_len不一致，应比max_seq_len小
+    '''
 
     def __init__(self, embed_dim, num_heads, qkv_bias=True):
         super(MultiHeadAttention, self).__init__()
@@ -62,9 +66,14 @@ class MultiHeadAttention(nn.Module):
         # K.transpose(-2, -1): [batch_size, num_heads, d_model, seq_len]
         # scores: [batch_size, num_heads, seq_len, seq_len]
         scores = torch.matmul(Q, K.transpose(-2, -1)) / torch.sqrt(torch.tensor(self.head_dim, dtype=torch.float32))
-        # print(f'{scores.shape=}')
+        # print(f'**{scores.shape=}')
+        # print(f'**{scores=}')
         if mask is not None:
+            # print(f'**{mask.shape=}')
+            # mask: [batch_size, 1, self.seq_len, self.seq_len]
             scores = scores.masked_fill(mask == 0, float('-inf'))
+            # print(f'After-mask:**{scores=}')
+        # print(f'**{scores.shape=}')
         # attn_weights: [batch_size, num_heads, seq_len, seq_len]
         attn_weights = F.softmax(scores, dim=-1)
         # print(f'MultiHeadAttention: {attn_weights.shape=}')
