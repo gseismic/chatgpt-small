@@ -240,3 +240,6 @@ Tokenizer 问题：通过保持对原始序列的映射或使用字符级别分�
 Multi-Head 问题：在中文处理中，可以通过增加注意力头的数量或动态调整注意力头来应对汉字的多义性和复杂语境。
 这些方法能够帮助 Transformer 在处理复杂序列任务时更有效地捕捉信息。
 ```
+## ChangeLogs
+- [@2024-08-19] project created
+- [@2024-08-22] v.0.0.2 code-review & training example 代码审查+训练代码
