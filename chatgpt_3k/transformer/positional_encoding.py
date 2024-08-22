@@ -15,6 +15,9 @@ class PositionalEncoding(nn.Module):
         # print(f'{self.encoding.shape=}')
 
     def forward(self, x):
+        device = x.device
+        if self.encoding.device != device:
+            self.encoding.to(device)
         # x: [batch_size, seq_len]
         # print(f'PositionalEncoding: {x.shape=}')
         y = self.encoding[:, :x.size(1)]
