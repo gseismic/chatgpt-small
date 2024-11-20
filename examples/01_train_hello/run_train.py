@@ -68,8 +68,8 @@ for epoch in range(num_epoch):
     epoch_loss = 0
     for input_seq, target_seq in dataloader:
         # input_seq, target_seq: 移位已经在dataset中处理了
-        # print(f'{tokenizer.decode([input_seq])=}')
-        # print(f'{tokenizer.decode([target_seq])=}')
+        print(f'{tokenizer.decode([input_seq])=}')
+        print(f'{tokenizer.decode([target_seq])=}')
         input_seq = input_seq.to(device)
         target_seq = target_seq.to(device)
 
@@ -88,6 +88,7 @@ for epoch in range(num_epoch):
     if epoch % epoch_verbose_circle == 0:
         print(f'Epoch {epoch+1}, Loss: {epoch_loss/len(dataloader):.6f}')
 
+raise
 # 推断
 #start_tokens = tokenizer.encode("hello")[0]
 #start_tokens = tokenizer.encode("this")[0]

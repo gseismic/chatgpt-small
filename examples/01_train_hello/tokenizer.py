@@ -1,6 +1,5 @@
 import string
 
-
 class CharTokenizer:
     def __init__(self):
         self.char_to_idx = {char: idx for idx, char in enumerate(string.ascii_lowercase + ' ')}
@@ -34,5 +33,6 @@ class NumTokenizer:
         return [self.char_to_idx[char] for char in text if char in self.char_to_idx]
 
     def decode(self, tokens):
+        print(f'{tokens=}')
         return ''.join([self.idx_to_char[token] for token in tokens])
 

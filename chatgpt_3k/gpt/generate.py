@@ -122,7 +122,9 @@ def generate_sequence(model, start_tokens, max_gen_len, vocab_size,
 
             generated.append(next_token.item())
             if callback is not None:
-                callback(next_token.item())
+                should_stop = callback(next_token.item())
+                if should_stop is True:
+                    break
             input_seq = torch.cat([input_seq, torch.tensor([[next_token]], device=device)], dim=1)
 
     return generated

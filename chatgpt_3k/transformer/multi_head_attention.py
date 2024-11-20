@@ -18,7 +18,6 @@ class MultiHeadAttention(nn.Module):
         # 这里可以选择添加bias项
         # embed_dim =  d_model * num_heads
         # 这里实际是多个头并在一起，并且不会导致QKV增加head的维度
-
         self.q_linear = nn.Linear(embed_dim, embed_dim, bias=qkv_bias)
         self.k_linear = nn.Linear(embed_dim, embed_dim, bias=qkv_bias)
         self.v_linear = nn.Linear(embed_dim, embed_dim, bias=qkv_bias)

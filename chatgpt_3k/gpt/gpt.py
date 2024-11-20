@@ -74,17 +74,17 @@ class GPT(nn.Module):
         # src: [batch_size, seq_len]
         # NOTE: 当前的x输入可能比self.seq_len小，并且是允许的
         # print(f'GPT: {x.shape=}')
+        device = x.device
         batch_size = x.size(0)
         cur_seq_len = x.size(1)
         assert 1 <= cur_seq_len <= self.seq_len
         # Apply causal mask (N, 1, seq_len, seq_len)
         # 因为要用到batch_size
-        mask = torch.tril(torch.ones((cur_seq_len, cur_seq_len))).expand(
+        mask = torch.tril(torch.ones((cur_seq_len, cur_seq_len), device=device)).expand(
             batch_size, 1, cur_seq_len, cur_seq_len
         )
         # print(f'{mask, mask.shape=}')
         # mask = None
-
         # energy = energy.masked_fill(causal_mask == 0, float('-inf'))
         # print(f'{x.shape=}')
         # print(f'{self.embedding(x).shape=}')
